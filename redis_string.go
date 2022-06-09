@@ -7,7 +7,7 @@ import (
 
 // SetString 设置key的值
 //
-// expiration 0，-1表示对应的key，不会设置有效期
+// expiration 0表示对应的key，不会设置有效期
 //
 // error表示出错
 func (rc RedisCluster) SetString(ctx *gin.Context, key string, value string, expiration time.Duration) error {
@@ -22,7 +22,7 @@ func (rc RedisCluster) SetString(ctx *gin.Context, key string, value string, exp
 
 // SetInt64 设置key的值
 //
-// expiration 0，-1表示对应的key，不会设置有效期
+// expiration 0表示对应的key，不会设置有效期
 //
 // error表示出错
 func (rc RedisCluster) SetInt64(ctx *gin.Context, key string, value int64, expiration time.Duration) error {
@@ -37,7 +37,7 @@ func (rc RedisCluster) SetInt64(ctx *gin.Context, key string, value int64, expir
 
 // SetNx 当key不存在时,设置key的值
 //
-// expiration 0，-1表示对应的key，不会设置有效期
+// expiration 0 表示对应的key，不会设置有效期
 //
 // bool true表示设置成功,即key原来是不存在的， false表示值已经存在，即新设置的值不生效
 //

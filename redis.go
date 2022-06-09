@@ -49,6 +49,9 @@ func hookFn(ctx *gin.Context) func(cmder redis.Cmder) {
 		//耗时
 		data["耗时"] = time.Since(st).Milliseconds() //毫秒
 		//todo
+		if cmder.Err() != nil {
+
+		}
 		//zap_logger.Debugf(ctx, "demo_redis", "data=%+v", data)
 	}
 }

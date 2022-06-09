@@ -89,6 +89,7 @@ func (rc RedisCluster) HLen(ctx *gin.Context, key string) (int64, error) {
 //对一个储存字符串值的域 field 执行 HINCRBY 命令将造成一个错误。
 //
 //本操作的值被限制在 64 位(bit)有符号数字表示之内。
+//
 //返回值：
 //执行 HINCRBY 命令之后，哈希表 key 中域 field 的值。
 func (rc RedisCluster) HIncrBy(ctx *gin.Context, key, field string, incr int64) (int64, error) {
