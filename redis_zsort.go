@@ -6,7 +6,7 @@ import (
 )
 
 type Z struct {
-	Score  float64
+	Score  float64 //score可以为负数
 	Member string
 }
 
@@ -84,13 +84,72 @@ func (rc RedisCluster) ZCard(ctx *gin.Context, key string) (int64, error) {
 }
 
 //返回有序集 key 中， score 值在 min 和 max 之间(默认包括 score 值等于 min 或 max )的成员的数量。
-func (rc RedisCluster) ZCount(ctx *gin.Context, key string, minScore, maxScore string) (int64, error) {
+func (rc RedisCluster) ZCount(ctx *gin.Context, key string, minScore, maxScore float64) (int64, error) {
 	fn := hookFn(ctx)
 
 	//strconv.FormatFloat()
-	cmd := rc.Cluster.ZCount(ctx, key, minScore, maxScore)
+	cmd := rc.Cluster.ZCount(ctx, key, FloatToString(minScore), FloatToString(maxScore))
 
 	fn(cmd)
 
 	return cmd.Val(), hasErr(cmd)
+}
+
+//http://redisdoc.com/sorted_set/zrange.html
+//
+//返回有序集 key 中，指定区间内的成员。
+//
+//其中成员的位置按 score 值递增(从小到大)来排序。
+//
+//下标参数 start 和 stop 都以 0 为底，也就是说，以 0 表示有序集第一个成员，以 1 表示有序集第二个成员，以此类推。
+//你也可以使用负数下标，以 -1 表示最后一个成员， -2 表示倒数第二个成员，以此类推。
+//
+//超出范围的下标并不会引起错误。 比如说，当 start 的值比有序集的最大下标还要大，或是 start > stop 时，
+//ZRANGE 命令只是简单地返回一个空列表。 另一方面，假如 stop 参数的值比有序集的最大下标还要大，
+//那么 Redis 将 stop 当作最大下标来处理。
+//
+//返回指定区间内，有序集成员的列表。
+func (rc RedisCluster) ZRange(ctx *gin.Context, key string, start, stop int64) ([]string, error) {
+	fn := hookFn(ctx)
+
+	cmd := rc.Cluster.ZRange(ctx, key, start, stop)
+
+	fn(cmd)
+
+	return cmd.Val(), hasErr(cmd)
+}
+
+// 同ZRange， 但是返回结果包括成员和score的所有信息
+func (rc RedisCluster) ZRangeWithScores(ctx *gin.Context, key string, start, stop int64) ([]Z, error) {
+	fn := hookFn(ctx)
+
+	cmd := rc.Cluster.ZRangeWithScores(ctx, key, start, stop)
+
+	fn(cmd)
+
+	return convertZ(cmd.Val()), hasErr(cmd)
+}
+
+// 参数含义同ZRange，
+//
+//成员的位置按 score 值递减(从大到小)来排序。
+func (rc RedisCluster) ZRevRange(ctx *gin.Context, key string, start, stop int64) ([]string, error) {
+	fn := hookFn(ctx)
+
+	cmd := rc.Cluster.ZRevRange(ctx, key, start, stop)
+
+	fn(cmd)
+
+	return cmd.Val(), hasErr(cmd)
+}
+
+// 同ZRevRange， 但是返回结果包括成员和score的所有信息
+func (rc RedisCluster) ZRevRangeWithScores(ctx *gin.Context, key string, start, stop int64) ([]Z, error) {
+	fn := hookFn(ctx)
+
+	cmd := rc.Cluster.ZRevRangeWithScores(ctx, key, start, stop)
+
+	fn(cmd)
+
+	return convertZ(cmd.Val()), hasErr(cmd)
 }

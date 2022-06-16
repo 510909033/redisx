@@ -5,6 +5,46 @@ import (
 	"testing"
 )
 
+func createZData(t *testing.T) ([]float64, Members) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+
+	key := "demo_key"
+	_, err := cluster.Delete(ctx, key)
+	assert.Nil(t, err)
+
+	data := []float64{
+		-1,
+		0,
+		0.01,
+		0.0001,
+		1,
+		1.001,
+		1.9999,
+		2,
+		2.001,
+	}
+
+	var members = make(Members, 0, len(data))
+	for _, v := range data {
+		members = append(members, Z{
+			Score:  v,
+			Member: FloatToString(v),
+		})
+	}
+
+	num, err := cluster.ZAdd(ctx, key, members)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(len(members)), num)
+
+	mems, err := cluster.ZRangeWithScores(ctx, key, 0, 10000)
+	_ = mems
+	assert.Nil(t, err)
+	//log.Printf("mems=%#v\n", mems)
+	//spew.Dump(mems)
+	return data, members
+}
+
 func TestRedisCluster_ZScore(t *testing.T) {
 	cluster := getTestClient()
 	ctx := getTestCtx()
@@ -128,6 +168,10 @@ func TestRedisCluster_ZCount(t *testing.T) {
 	_, err := cluster.Delete(ctx, key)
 	assert.Nil(t, err)
 
+	count, err := cluster.ZCount(ctx, key, 0, 100000)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), count)
+
 	members := Members{
 		{
 			Score:  10.22222,
@@ -147,20 +191,77 @@ func TestRedisCluster_ZCount(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, int64(len(members)), num)
 
-	cnt, err := cluster.ZCount(ctx, key, "10", "25")
+	cnt, err := cluster.ZCount(ctx, key, 10, 25)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(2), cnt)
 
-	cnt, err = cluster.ZCount(ctx, key, "10.22222", "10.22222")
+	cnt, err = cluster.ZCount(ctx, key, 10.22222, 10.22222)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(1), cnt)
 
-	cnt, err = cluster.ZCount(ctx, key, "0", "9.9999")
+	cnt, err = cluster.ZCount(ctx, key, 0, 9.9999)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(0), cnt)
 
-	cnt, err = cluster.ZCount(ctx, key, "9.9999", "10.22222")
+	cnt, err = cluster.ZCount(ctx, key, 9.9999, 10.22222)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(1), cnt)
+
+}
+
+func TestRedisCluster_ZRange(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+	key := "demo_key"
+
+	scores, members := createZData(t)
+	_ = scores
+
+	data, err := cluster.ZRange(ctx, key, 0, 1)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(data))
+	assert.Equal(t, members[0].Member, data[0])
+	assert.Equal(t, members[1].Member, data[1])
+
+	data, err = cluster.ZRange(ctx, key, 0, 100)
+	assert.Nil(t, err)
+	assert.Equal(t, len(scores), len(data))
+	assert.Equal(t, members[0].Member, data[0])
+	assert.Equal(t, members[len(scores)-1].Member, data[len(data)-1])
+
+	data2, err := cluster.ZRange(ctx, key, 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, len(scores), len(data2))
+	assert.Equal(t, members[0].Member, data[0])
+	assert.Equal(t, members[len(scores)-1].Member, data[len(data)-1])
+	assert.Equal(t, data, data2)
+
+}
+func TestRedisCluster_ZRangeWithScores(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+	key := "demo_key"
+
+	scores, members := createZData(t)
+	_ = scores
+
+	data, err := cluster.ZRevRangeWithScores(ctx, key, 0, 1)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(data))
+	assert.Equal(t, members[len(members)-1], data[0])
+	assert.Equal(t, members[len(members)-2], data[1])
+
+	data, err = cluster.ZRevRangeWithScores(ctx, key, 0, 100)
+	assert.Nil(t, err)
+	assert.Equal(t, len(scores), len(data))
+	assert.Equal(t, members[len(members)-1], data[0])
+	assert.Equal(t, members[0], data[len(data)-1])
+
+	data2, err := cluster.ZRevRangeWithScores(ctx, key, 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, len(scores), len(data2))
+	assert.Equal(t, members[len(members)-1], data[0])
+	assert.Equal(t, members[0], data[len(data)-1])
+	assert.Equal(t, data, data2)
 
 }
