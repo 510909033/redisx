@@ -7,15 +7,16 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"sync/atomic"
+	"sync"
 	"time"
 )
 
-type DemoKafka struct {
+type DemoSingle struct {
+	Num int64
+	sync.Mutex
 }
 
-//列出topic
-func (demo *DemoKafka) demoGetPartitions() {
+func (s *DemoSingle) createTopic() {
 	conn, err := kafka.Dial("tcp", getAddrs())
 	if err != nil {
 		panic(err.Error())
@@ -33,7 +34,7 @@ func (demo *DemoKafka) demoGetPartitions() {
 	m := map[string]kafka.Partition{}
 
 	for _, p := range partitions {
-		if p.Topic == demoGetTopic() {
+		if p.Topic == s.getTopic() {
 			log.Printf("hit demoGetTopic, topic=%s\n", p.Topic)
 		}
 		m[p.Topic] = p
@@ -56,15 +57,14 @@ func (demo *DemoKafka) demoGetPartitions() {
 	}
 	defer controllerConn.Close()
 
-	var topicName = "demo_wbt_topic"
 	//err = controllerConn.DeleteTopics(topicName)
 	//if err != nil {
 	//	log.Fatalf("DeleteTopics fail, err=%+v", err)
 	//}
 
 	err = controllerConn.CreateTopics(kafka.TopicConfig{
-		Topic:              topicName,
-		NumPartitions:      3,
+		Topic:              s.getTopic(),
+		NumPartitions:      1,
 		ReplicationFactor:  1,
 		ReplicaAssignments: nil,
 		ConfigEntries:      nil,
@@ -72,41 +72,24 @@ func (demo *DemoKafka) demoGetPartitions() {
 	if err != nil {
 		log.Fatalf("CreateTopics fail, err=%+v", err)
 	}
-	log.Printf("创建topic无报错, topic=%s\n", topicName)
-
-	//ID 是不对的，都是0 。。。，但是host是对的
-	log.Printf("conn.Broker().ID=%d, host=%s", conn.Broker().ID, conn.Broker().Host)
-	log.Printf("controllerConn.Broker().ID=%d, host=%s", controllerConn.Broker().ID, controllerConn.Broker().Host)
-	brokers, err := conn.Brokers()
-	if err != nil {
-		panic(err)
-	}
-	for _, v := range brokers {
-		log.Printf("一个broker, id=%d", v.ID)
-	}
-
-	dialPartition, err := kafka.DialPartition(context.Background(), "tcp", getAddrs(), m[demoGetTopic()])
-	if err != nil {
-		panic(err)
-	}
-	message, err := dialPartition.ReadMessage(1024)
-	log.Printf("msg=%s, message=%+v, err=%+v", string(message.Value), message, err)
+	log.Printf("创建topic无报错, topic=%s\n", s.getTopic())
 }
 
-var ClientID int64
-
-func getClientID() int64 {
-	return atomic.AddInt64(&ClientID, 1)
+func (s *DemoSingle) getTopic() string {
+	return "demo_single_v2"
 }
-func (demo *DemoKafka) demoReader() {
-	log.Println("start ", time.Now().String())
+func (s *DemoSingle) getGroupId() string {
+	return "group_v2"
+}
+
+func (s *DemoSingle) read() {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: getAddrsList(),
 		//Partition: 1,
-		GroupID:     "demo_fetch_group",
+		GroupID:     s.getGroupId(),
 		GroupTopics: nil,
 		Topic:       demoGetTopic(),
-		Partition:   0,
+		//Partition:   0,
 		Dialer: &kafka.Dialer{
 			ClientID: fmt.Sprintf("%d", getClientID()),
 			//DialFunc:        nil,
@@ -150,18 +133,13 @@ func (demo *DemoKafka) demoReader() {
 		MaxAttempts:    0,
 	})
 	//r.SetOffset(42)
-
-	size := 20
-	currNum := 0
-
-	r.Lag()
+	var mu sync.Mutex
 
 	for {
-		currNum++
-		if currNum > size {
-			break
-		}
+		mu.Lock()
 		m, err := r.ReadMessage(context.Background())
+
+		mu.Unlock()
 		if err != nil {
 			panic(err)
 			break
@@ -174,59 +152,23 @@ func (demo *DemoKafka) demoReader() {
 
 	}
 
-	log.Println("sleep ... ")
-	time.Sleep(time.Second * 2)
-
 	if err := r.Close(); err != nil {
 		log.Fatal("failed to close reader:", err)
 	}
 	log.Println("over")
 }
 
-func (demo *DemoKafka) demoFetch() {
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  getAddrsList(),
-		Topic:    demoGetTopic(),
-		MinBytes: 10e3, // 10KB
-		//MinBytes: 1,    // 10KB
-		MaxBytes: 10e6, // 10MB
-		GroupID:  "demo_fetch_group",
-	})
-
-	size := 2
-	currNum := 0
-
-	ctx := context.Background()
-	for {
-		currNum++
-		if currNum > size {
-			break
-		}
-
-		m, err := r.FetchMessage(ctx)
-		if err != nil {
-			break
-		}
-		fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
-		if err := r.CommitMessages(ctx, m); err != nil {
-			log.Fatal("failed to commit messages:", err)
-		}
-	}
-
-	log.Println("sleep ... ")
-	time.Sleep(time.Minute)
-
-	if err := r.Close(); err != nil {
-		log.Fatal("failed to close reader:", err)
-	}
-	log.Println("over")
-}
-
-func (demo *DemoKafka) demoWrite() {
+func (s *DemoSingle) Run() {
 	w := kafka.Writer{
-		Addr:     kafka.TCP(getAddrsList()...),
-		Topic:    demoGetTopic(),
-		Balancer: nil,
+		Addr:         kafka.TCP(getAddrsList()...),
+		Topic:        s.getTopic(),
+		Balancer:     nil,
+		MaxAttempts:  0,
+		BatchSize:    0,
+		BatchBytes:   0,
+		BatchTimeout: 0,
+		ReadTimeout:  0,
+		WriteTimeout: 0,
 		//MaxAttempts:  0,
 		//BatchSize:    0,
 		//BatchBytes:   0,
@@ -235,11 +177,15 @@ func (demo *DemoKafka) demoWrite() {
 		//WriteTimeout: 0,
 		RequiredAcks: -1,
 		Async:        false,
-		//Completion:   nil,
-		//Compression:  0,
-		//Logger:       nil,
-		//ErrorLogger:  nil,
-		//Transport:    nil,
+		Completion:   nil,
+		Compression:  0,
+		Logger: kafka.LoggerFunc(func(msg string, args ...interface{}) {
+			log.Printf("Logger , "+msg, args...)
+		}),
+		ErrorLogger: kafka.LoggerFunc(func(msg string, args ...interface{}) {
+			log.Printf("ErrorLogger,"+msg, args...)
+		}),
+		Transport: nil,
 	}
 	defer func() {
 		err := w.Close()
@@ -248,23 +194,23 @@ func (demo *DemoKafka) demoWrite() {
 		}
 	}()
 
-	for i := 0; i < 100; i++ {
-		ctx := context.Background()
-		err := w.WriteMessages(ctx, kafka.Message{
-			//Topic:         demoGetTopic(),
-			//Partition:     0,
-			//Offset:        0,
-			//HighWaterMark: 0,
-			//Key:           nil,
-			Value: []byte(time.Now().String()),
-			//Headers:       nil,
-			//Time:          time.Time{},
-		})
-		if err != nil {
-			panic(err)
-		}
+	ctx := context.Background()
+	newCtx, cancelFunc := context.WithTimeout(ctx, time.Millisecond)
+	_ = newCtx
+	_ = cancelFunc
+
+	err := w.WriteMessages(newCtx, kafka.Message{
+		//Topic:         demoGetTopic(),
+		//Partition:     0,
+		//Offset:        0,
+		//HighWaterMark: 0,
+		//Key:           nil,
+		Value: []byte(time.Now().Format("2006-01-02 15:04:05")),
+		//Headers:       nil,
+		//Time:          time.Time{},
+	})
+	if err != nil {
+		panic(err)
 	}
 
-	stats := w.Stats()
-	log.Printf("stats=%+v\n", stats)
 }

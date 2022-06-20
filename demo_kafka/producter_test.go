@@ -27,6 +27,12 @@ func TestDemoKafka_demoReader(t *testing.T) {
 	wg.Wait()
 }
 
+func TestDemoKafka_demoReaderOne(t *testing.T) {
+
+	demo := &DemoKafka{}
+	demo.demoReader()
+}
+
 func TestDemoKafka_demoFetch(t *testing.T) {
 	demo := &DemoKafka{}
 	demo.demoFetch()
