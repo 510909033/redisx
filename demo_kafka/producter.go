@@ -256,8 +256,8 @@ func (demo *DemoKafka) demoWrite() {
 			//Offset:        0,
 			//HighWaterMark: 0,
 			//Key:           nil,
-			Value: []byte(time.Now().String()),
-			//Headers:       nil,
+			Value:   []byte(time.Now().String()),
+			Headers: nil,
 			//Time:          time.Time{},
 		})
 		if err != nil {

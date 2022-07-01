@@ -1,6 +1,7 @@
 package redisx
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -80,16 +81,19 @@ func TestRedisCluster_HGet(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, int64(len(value)), cnt)
 
-	val, err := cluster.HGet(ctx, key, "2")
+	val, hit, err := cluster.HGet(ctx, key, "2")
 	assert.Nil(t, err)
+	assert.True(t, hit)
 	assert.Equal(t, "22", val)
 
-	val, err = cluster.HGet(ctx, key, "not exist")
+	val, hit, err = cluster.HGet(ctx, key, "not exist")
 	assert.Nil(t, err)
+	assert.False(t, hit)
 	assert.Equal(t, "", val)
 
-	val, err = cluster.HGet(ctx, "key_exists", "not exist")
+	val, hit, err = cluster.HGet(ctx, "key_exists", "not exist")
 	assert.Nil(t, err)
+	assert.False(t, hit)
 	assert.Equal(t, "", val)
 }
 
@@ -235,5 +239,29 @@ func TestRedisCluster_HGetAll(t *testing.T) {
 	redisValues, err = cluster.HGetAll(ctx, key)
 	assert.Nil(t, err)
 	assert.Equal(t, value, redisValues)
+
+}
+
+func TestRedisCluster_HMSet(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+
+	key := "demo_key"
+
+	deleteKey(key)
+	var value []interface{}
+	for i := 0; i < 10; i++ {
+		val := ""
+		if i%2 == 0 {
+			val = fmt.Sprintf("key_%d", i)
+		} else {
+			val = fmt.Sprintf("val_%d", i)
+		}
+		value = append(value, val)
+	}
+
+	hit, err := cluster.HMSet(ctx, key, value)
+	assert.Nil(t, err)
+	t.Log(hit)
 
 }

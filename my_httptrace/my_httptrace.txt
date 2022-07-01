@@ -1,0 +1,15 @@
+
+详解golang net之transport
+https://www.cnblogs.com/charlieroro/p/11409153.html
+
+TSL详解
+https://www.jianshu.com/p/1fc7130eb2c2
+
+结构体Transport
+https://segmentfault.com/a/1190000023676010
+
+
+
+
+
+http://go.wangbaotian.babytree-dev.com/go_tool/api/baby_listen/get_recommend_list?skip=1&ali_abtest_sample_id=100014&ali_abtest_type=165&app_id=pregnancy&baby_status=3&babytree_client_type=ios&babytree_net_type=1&bpreg_brithday=2018-03-23&client_abtest=304_237118&client_baby_status=3&client_role=2&client_type=ios&current_baby_id=-1&device_model=iPhone&download_ts=1619176505&idfa=00000000-0000-0000-0000-000000000000&latitude=39.927887&local_ts=1619180469&longitude=116.462206&mac=11113bdd85bbf1301beddc0c7470f5003f98c8c54f12&not_found_router=yes&result_format=text_json&secret=a1ab5bb1378d11e0ea252d685d1ff56b&source_channel=appstore&version=8.49.0

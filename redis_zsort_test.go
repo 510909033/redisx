@@ -265,3 +265,42 @@ func TestRedisCluster_ZRangeWithScores(t *testing.T) {
 	assert.Equal(t, data, data2)
 
 }
+
+func TestRedisCluster_ZRemRangeByRank(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+	key := "demo_key"
+
+	createZData(t)
+
+	vals, err := cluster.ZRangeWithScores(ctx, key, 0, -1)
+	assert.Nil(t, err)
+	t.Logf("%+v", vals)
+
+	num, err := cluster.ZRemRangeByRank(ctx, key, 0, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1), num)
+
+	vals2, err := cluster.ZRangeWithScores(ctx, key, 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, vals2, vals[1:])
+}
+func TestRedisCluster_ZRemRangeByScore(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+	key := "demo_key"
+
+	createZData(t)
+
+	vals, err := cluster.ZRangeWithScores(ctx, key, 0, -1)
+	assert.Nil(t, err)
+	t.Logf("%+v", vals)
+
+	num, err := cluster.ZRemRangeByScore(ctx, key, 0.0001, 1) //3个
+	assert.Nil(t, err)
+	assert.Equal(t, int64(3), num)
+
+	vals2, err := cluster.ZRangeWithScores(ctx, key, 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, vals2, append(vals[0:2], vals[5:]...))
+}

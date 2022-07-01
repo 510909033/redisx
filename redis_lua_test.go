@@ -13,7 +13,7 @@ func TestRedisCluster_Lua(t *testing.T) {
 
 	key := "demo_key"
 
-	cluster.SetString(ctx, key, "some val", time.Second*10)
+	cluster.Set(ctx, key, "some val", time.Second*10)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 1; i++ {
@@ -36,7 +36,7 @@ func TestRedisCluster_LuaDemo(t *testing.T) {
 
 	key := "demo_key"
 
-	cluster.SetString(ctx, key, "some val", time.Second*10)
+	cluster.Set(ctx, key, "some val", time.Second*10)
 
 	for i := 0; i < 1; i++ {
 		//_, err := cluster.Lua(ctx, SCRIPT_GET, []string{key})
