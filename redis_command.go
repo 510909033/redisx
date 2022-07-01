@@ -29,7 +29,7 @@ func init() {
 }
 
 type RedisCluster struct {
-	Cluster client
+	client  client
 	Group   string
 	options *redis.UniversalOptions
 	logger  func(format string, vals ...interface{})
@@ -40,7 +40,7 @@ func (rc *RedisCluster) Exist(ctx *gin.Context, key string) (bool, error) {
 	if !validKey(key) {
 		return false, errEmptyKey
 	}
-	cmd := rc.Cluster.Exists(ctx, key)
+	cmd := rc.client.Exists(ctx, key)
 
 	return cmd.Val() == 1, cmd.Err()
 }
@@ -50,14 +50,14 @@ func (rc *RedisCluster) Exist(ctx *gin.Context, key string) (bool, error) {
 // len(keys) > 1时, int64表示存在的key的数量
 func (rc *RedisCluster) Exists(ctx *gin.Context, keys ...string) (int64, error) {
 
-	cmd := rc.Cluster.Exists(ctx, keys...)
+	cmd := rc.client.Exists(ctx, keys...)
 
 	return cmd.Val(), cmd.Err()
 }
 
 // Get 获取与key关联的val，第二个返回值表示key是否存在
 func (rc *RedisCluster) Get(ctx *gin.Context, key string) (string, bool, error) {
-	cmd := rc.Cluster.Get(ctx, key)
+	cmd := rc.client.Get(ctx, key)
 
 	return cmd.Val(), cmd.Err() != redis.Nil, hasErr(cmd)
 }
@@ -67,7 +67,7 @@ func (rc *RedisCluster) Get(ctx *gin.Context, key string) (string, bool, error) 
 // error表示出错
 func (rc *RedisCluster) Delete(ctx *gin.Context, key string) (bool, error) {
 
-	cmd := rc.Cluster.Del(ctx, key)
+	cmd := rc.client.Del(ctx, key)
 
 	return cmd.Val() == 1, hasErr(cmd)
 }
@@ -78,7 +78,7 @@ func (rc *RedisCluster) Delete(ctx *gin.Context, key string) (bool, error) {
 //
 func (rc *RedisCluster) Expire(ctx *gin.Context, key string, seconds int) (bool, error) {
 
-	cmd := rc.Cluster.Expire(ctx, key, time.Second*time.Duration(seconds))
+	cmd := rc.client.Expire(ctx, key, time.Second*time.Duration(seconds))
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -88,7 +88,7 @@ func (rc *RedisCluster) Expire(ctx *gin.Context, key string, seconds int) (bool,
 // timeSet  最终会精确到秒级别(time.Unix())
 func (rc *RedisCluster) ExpireAt(ctx *gin.Context, key string, timeSet time.Time) (bool, error) {
 
-	cmd := rc.Cluster.ExpireAt(ctx, key, timeSet)
+	cmd := rc.client.ExpireAt(ctx, key, timeSet)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -100,7 +100,7 @@ func (rc *RedisCluster) ExpireAt(ctx *gin.Context, key string, timeSet time.Time
 // 否则，以秒为单位，返回 key 的剩余生存时间。
 func (rc *RedisCluster) TTL(ctx *gin.Context, key string) (time.Duration, error) {
 
-	cmd := rc.Cluster.TTL(ctx, key)
+	cmd := rc.client.TTL(ctx, key)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -116,7 +116,7 @@ func (rc *RedisCluster) TTL(ctx *gin.Context, key string) (time.Duration, error)
 //DECR 命令会返回键 key 在执行减一操作之后的值。
 func (rc *RedisCluster) Decr(ctx *gin.Context, key string) (int64, error) {
 
-	cmd := rc.Cluster.Decr(ctx, key)
+	cmd := rc.client.Decr(ctx, key)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -136,7 +136,7 @@ func (rc *RedisCluster) Decr(ctx *gin.Context, key string) (int64, error) {
 //DECRBY 命令会返回键在执行减法操作之后的值。
 func (rc *RedisCluster) DecrBy(ctx *gin.Context, key string, decrement int64) (int64, error) {
 
-	cmd := rc.Cluster.DecrBy(ctx, key, decrement)
+	cmd := rc.client.DecrBy(ctx, key, decrement)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -148,7 +148,7 @@ func (rc *RedisCluster) DecrBy(ctx *gin.Context, key string, decrement int64) (i
 //如果命令执行成功， 那么键 key 的值会被更新为执行加法计算之后的新值， 并且新值会以字符串的形式返回给调用者。
 func (rc *RedisCluster) IncrByFloat(ctx *gin.Context, key string, value float64) (float64, error) {
 
-	cmd := rc.Cluster.IncrByFloat(ctx, key, value)
+	cmd := rc.client.IncrByFloat(ctx, key, value)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -161,7 +161,7 @@ func (rc *RedisCluster) IncrByFloat(ctx *gin.Context, key string, value float64)
 //
 // error表示出错
 func (rc RedisCluster) Set(ctx *gin.Context, key string, value string, expiration time.Duration) error {
-	cmd := rc.Cluster.Set(ctx, key, value, expiration)
+	cmd := rc.client.Set(ctx, key, value, expiration)
 
 	return hasErr(cmd)
 }
@@ -182,8 +182,8 @@ func (rc RedisCluster) SetNx(ctx *gin.Context, key string, value interface{}, ex
 	//	return false, err
 	//}
 
-	//cmd := rc.Cluster.SetNX(ctx, key, string(bytesData), expiration)
-	cmd := rc.Cluster.SetNX(ctx, key, value, expiration)
+	//cmd := rc.client.SetNX(ctx, key, string(bytesData), expiration)
+	cmd := rc.client.SetNX(ctx, key, value, expiration)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -197,7 +197,34 @@ func (rc RedisCluster) SetNx(ctx *gin.Context, key string, value interface{}, ex
 //本操作的值限制在 64 位(bit)有符号数字表示之内。
 func (rc RedisCluster) IncrBy(ctx *gin.Context, key string, value int64) (int64, error) {
 
-	cmd := rc.Cluster.IncrBy(ctx, key, value)
+	cmd := rc.client.IncrBy(ctx, key, value)
+
+	return cmd.Val(), hasErr(cmd)
+}
+
+//将键 key 的值设置为 value ， 并将键 key 的生存时间设置为 seconds 秒钟。
+//
+//如果键 key 已经存在， 那么 SETEX 命令将覆盖已有的值。
+//
+//返回值
+//
+//命令在设置成功时返回 true 。 当 seconds 参数不合法时， 命令将返回一个错误。
+func (rc RedisCluster) SetEX(ctx *gin.Context, key string, value string, expiration time.Duration) (isSuccess bool, err error) {
+	cmd := rc.client.SetEX(ctx, key, value, expiration)
+
+	return isOK(cmd.Val()), hasErr(cmd)
+}
+
+//这个方法集群中不能使用， 会出现key在集群多个slot情况
+//
+// Expected nil, but got: "CROSSSLOT Keys in request don't hash to the same slot"
+//
+// 删除多个key
+//
+//succNum 删除成功key的个数
+func (rc *RedisCluster) DeleteMulti(ctx *gin.Context, key ...string) (succNum int64, err error) {
+
+	cmd := rc.client.Del(ctx, key...)
 
 	return cmd.Val(), hasErr(cmd)
 }

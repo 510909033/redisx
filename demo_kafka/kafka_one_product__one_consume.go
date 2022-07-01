@@ -58,13 +58,53 @@ func logErr(format string, v ...interface{}) {
 	log.Printf("[ ERROR ] "+format+"\n", v...)
 }
 
+func (demo *DemoKafkaOneProductOneConsume) writeByPartitions(topic string) {
+
+	partitions := demo.getPartitions(topic)
+
+	onePartition := partitions[0]
+
+	conn := getConn()
+
+	controller, err := conn.Controller()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	address := net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port))
+
+	dialPartition, err := kafka.DialPartition(context.Background(), "tcp", address, onePartition)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = dialPartition.ReadMessage(1024)
+	if err != nil {
+		panic(err)
+	}
+
+	//dialPartition.Seek(2, kafka.SeekStart)
+	//dialPartition.Seek(2, kafka.SeekEnd)
+	//dialPartition.Seek(2, kafka.SeekAbsolute)
+	dialPartition.Seek(2, kafka.SeekCurrent)
+
+	dialPartition.Offset()
+
+	for {
+		m, err := dialPartition.ReadMessage(1024)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("message at  Partition:%d, offset %d: %s = %s\n",
+			m.Partition, m.Offset, string(m.Key), string(m.Value))
+	}
+}
 func (demo *DemoKafkaOneProductOneConsume) getPartitions(topic string) []kafka.Partition {
 	conn := getConn()
 	partitions, err := conn.ReadPartitions(topic)
 	if err != nil {
 		panic(err.Error())
 	}
-	kafka.NewConsumerGroup()
 
 	logDebug("topic=%s, Partition数=%d\n", topic, len(partitions))
 	for k, v := range partitions {
@@ -109,10 +149,6 @@ func (demo *DemoKafkaOneProductOneConsume) deleteTopic(topic string) bool {
 	return true
 }
 func (demo *DemoKafkaOneProductOneConsume) createTopic(topic string, numPartitions int) bool {
-	//if demo.topicExists(topic) {
-	//	return false
-	//}
-
 	conn := getConn()
 
 	controller, err := conn.Controller()
@@ -398,7 +434,7 @@ func (demo *DemoKafkaOneProductOneConsume) consumeMessageByPartitions(topic stri
 	currNum := 0
 
 	//todo
-	time.Sleep(time.Second * 5)
+	//time.Sleep(time.Second * 5)
 
 	for {
 		currNum++

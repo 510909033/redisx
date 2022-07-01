@@ -265,3 +265,30 @@ func TestRedisCluster_HMSet(t *testing.T) {
 	t.Log(hit)
 
 }
+
+func TestRedisCluster_HSetNX(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+
+	key := getRedisKey()
+
+	deleteKey(key)
+	setSuccess, err := cluster.HSetNX(ctx, key, "aaa", "bbb")
+	assert.Nil(t, err)
+	assert.True(t, setSuccess)
+
+	val, hit, err := cluster.HGet(ctx, key, "aaa")
+	assert.Nil(t, err)
+	assert.True(t, hit)
+	assert.Equal(t, "bbb", val)
+
+	setSuccess, err = cluster.HSetNX(ctx, key, "aaa", "bbb")
+	assert.Nil(t, err)
+	assert.False(t, setSuccess)
+
+	val, hit, err = cluster.HGet(ctx, key, "aaa")
+	assert.Nil(t, err)
+	assert.True(t, hit)
+	assert.Equal(t, "bbb", val)
+
+}

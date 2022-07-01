@@ -94,3 +94,31 @@ func TestDemoKafkaOneProductOneConsume_consumeMessageByPartitions(t *testing.T) 
 	}
 	time.Sleep(time.Second * 15000)
 }
+
+func TestDemoKafkaOneProductOneConsume_ONE_Partition_Three_Consumer(t *testing.T) {
+	demo := &DemoKafkaOneProductOneConsume{}
+	topic := "ONE_Partition_Three_Consumer"
+	groupId := "one_three_group"
+
+	demo.createTopic(topic, 1)
+	time.Sleep(time.Second * 2)
+
+	demo.writeMessageByPartitions(topic, 5, nil)
+
+	time.Sleep(time.Second * 2)
+
+	num := 5
+	for i := 0; i < 5; i++ {
+		go func() {
+			demo.consumeMessageByPartitions(topic, groupId, 0, num)
+		}()
+	}
+	time.Sleep(time.Second * 15000)
+}
+
+func TestDemoKafkaOneProductOneConsume_writeByPartitions(t *testing.T) {
+	demo := &DemoKafkaOneProductOneConsume{}
+	topic := "ONE_Partition_Three_Consumer"
+
+	demo.writeByPartitions(topic)
+}

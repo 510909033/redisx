@@ -21,7 +21,7 @@ import (
 //执行 LPUSH 命令后，列表的长度
 func (rc RedisCluster) LPush(ctx *gin.Context, key string, value ...interface{}) (int64, error) {
 
-	cmd := rc.Cluster.LPush(ctx, key, value...)
+	cmd := rc.client.LPush(ctx, key, value...)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -35,7 +35,7 @@ func (rc RedisCluster) LPush(ctx *gin.Context, key string, value ...interface{})
 func (rc RedisCluster) LPushX(ctx *gin.Context, key string,
 	value ...interface{}) (int64, error) {
 
-	cmd := rc.Cluster.LPushX(ctx, key, value...)
+	cmd := rc.client.LPushX(ctx, key, value...)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -52,7 +52,7 @@ func (rc RedisCluster) LPushX(ctx *gin.Context, key string,
 //执行 RPUSH 操作后，表的长度
 func (rc RedisCluster) RPush(ctx *gin.Context, key string, value ...interface{}) (int64, error) {
 
-	cmd := rc.Cluster.RPush(ctx, key, value...)
+	cmd := rc.client.RPush(ctx, key, value...)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -65,7 +65,7 @@ func (rc RedisCluster) RPush(ctx *gin.Context, key string, value ...interface{})
 //RPUSHX 命令执行之后，表的长度。
 func (rc RedisCluster) RPushX(ctx *gin.Context, key string, value ...interface{}) (int64, error) {
 
-	cmd := rc.Cluster.RPushX(ctx, key, value...)
+	cmd := rc.client.RPushX(ctx, key, value...)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -76,7 +76,7 @@ func (rc RedisCluster) RPushX(ctx *gin.Context, key string, value ...interface{}
 //列表的头元素。 当 key 不存在时, bool == false
 func (rc RedisCluster) LPop(ctx *gin.Context, key string) (string, bool, error) {
 
-	cmd := rc.Cluster.LPop(ctx, key)
+	cmd := rc.client.LPop(ctx, key)
 
 	return cmd.Val(), cmd.Err() != redis.Nil, hasErr(cmd)
 }
@@ -87,7 +87,7 @@ func (rc RedisCluster) LPop(ctx *gin.Context, key string) (string, bool, error) 
 //列表的尾元素。 当 key 不存在时，返回 nil 。
 func (rc RedisCluster) RPop(ctx *gin.Context, key string) (string, error) {
 
-	cmd := rc.Cluster.RPop(ctx, key)
+	cmd := rc.client.RPop(ctx, key)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -102,7 +102,7 @@ func (rc RedisCluster) RPop(ctx *gin.Context, key string) (string, error) {
 //列表 key 的长度。
 func (rc RedisCluster) LLen(ctx *gin.Context, key string) (int64, error) {
 
-	cmd := rc.Cluster.LLen(ctx, key)
+	cmd := rc.client.LLen(ctx, key)
 
 	return cmd.Val(), hasErr(cmd)
 }
@@ -136,7 +136,7 @@ func (rc RedisCluster) LLen(ctx *gin.Context, key string) (int64, error) {
 //命令执行成功时，true 。
 func (rc RedisCluster) LTrim(ctx *gin.Context, key string, start, stop int64) (bool, error) {
 
-	cmd := rc.Cluster.LTrim(ctx, key, start, stop)
+	cmd := rc.client.LTrim(ctx, key, start, stop)
 
 	return isOK(cmd.Val()), hasErr(cmd)
 }
@@ -155,14 +155,14 @@ func (rc RedisCluster) LTrim(ctx *gin.Context, key string, start, stop int64) (b
 //被移除元素的数量。 因为不存在的 key 被视作空表(empty list)，所以当 key 不存在时， LREM 命令总是返回 0 。
 func (rc RedisCluster) LRem(ctx *gin.Context, key string, count int64, value interface{}) (int64, error) {
 
-	cmd := rc.Cluster.LRem(ctx, key, count, value)
+	cmd := rc.client.LRem(ctx, key, count, value)
 
 	return cmd.Val(), hasErr(cmd)
 }
 
 func (rc RedisCluster) LRange(ctx *gin.Context, key string, start, stop int64) ([]string, error) {
 
-	cmd := rc.Cluster.LRange(ctx, key, start, stop)
+	cmd := rc.client.LRange(ctx, key, start, stop)
 
 	return cmd.Val(), hasErr(cmd)
 }

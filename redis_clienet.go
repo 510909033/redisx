@@ -49,8 +49,8 @@ func GetTestRedisClient() RedisCluster {
 	client.AddHook(redisHook{})
 
 	return RedisCluster{
-		Cluster: client,
-		Group:   "demo_group",
+		client: client,
+		Group:  "demo_group",
 	}
 }
 

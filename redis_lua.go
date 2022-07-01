@@ -39,7 +39,7 @@ func (rc RedisCluster) Lua(ctx *gin.Context, script string, keys []string, args 
 
 		if hashMap[script] == "" {
 
-			loadCmd := rc.Cluster.ScriptLoad(ctx, script)
+			loadCmd := rc.client.ScriptLoad(ctx, script)
 
 			if loadCmd.Err() != nil {
 				return "", loadCmd.Err()
@@ -59,7 +59,7 @@ func (rc RedisCluster) Lua(ctx *gin.Context, script string, keys []string, args 
 		return nil, err
 	}
 
-	shaCmd := rc.Cluster.EvalSha(ctx, hashKey, keys, args)
+	shaCmd := rc.client.EvalSha(ctx, hashKey, keys, args)
 
 	log.Println(hashKey, shaCmd.Val(), shaCmd.Err())
 	return shaCmd.Val(), shaCmd.Err()
@@ -73,7 +73,7 @@ func (rc RedisCluster) LuaDemo(ctx *gin.Context, script string, keys []string, a
 
 		var hashKey string
 
-		loadCmd := rc.Cluster.ScriptLoad(ctx, script)
+		loadCmd := rc.client.ScriptLoad(ctx, script)
 
 		if loadCmd.Err() != nil {
 			return "", loadCmd.Err()
@@ -92,7 +92,7 @@ func (rc RedisCluster) LuaDemo(ctx *gin.Context, script string, keys []string, a
 		return nil, err
 	}
 
-	shaCmd := rc.Cluster.EvalSha(ctx, hashKey, keys, args)
+	shaCmd := rc.client.EvalSha(ctx, hashKey, keys, args)
 
 	log.Println(hashKey, shaCmd.Val(), shaCmd.Err())
 	return shaCmd.Val(), shaCmd.Err()
