@@ -9,6 +9,15 @@ import (
 	"time"
 )
 
+func TestRedisCluster_Redis_lock(t *testing.T) {
+	cluster := getTestClient()
+	ctx := getTestCtx()
+	key := getRedisKey()
+	cluster.SetNx(ctx, key, "val", time.Second) // master成功，save未同步后发生了切换
+
+	cluster.SetNx(ctx, key, "val", time.Second) //slave还会成功
+
+}
 func TestRedisCluster_Redis_Exception(t *testing.T) {
 	cluster := getTestClient()
 	ctx := getTestCtx()

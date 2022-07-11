@@ -1,6 +1,7 @@
 package redisx
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
@@ -29,15 +30,18 @@ func getTestClient() RedisCluster {
 	}
 
 	client := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:              addrs,
-		NewClient:          nil,
-		MaxRedirects:       0,
-		ReadOnly:           false,
-		RouteByLatency:     false,
-		RouteRandomly:      false,
-		ClusterSlots:       nil,
-		Dialer:             nil,
-		OnConnect:          nil,
+		Addrs:          addrs,
+		NewClient:      nil,
+		MaxRedirects:   0,
+		ReadOnly:       false,
+		RouteByLatency: false,
+		RouteRandomly:  false,
+		ClusterSlots:   nil,
+		Dialer:         nil,
+		OnConnect: func(ctx context.Context, cn *redis.Conn) error {
+			boolCmd := cn.ClientSetName(ctx, "client_name_"+time.Now().Format("2006-01-02__15:04:05"))
+			return boolCmd.Err()
+		},
 		Username:           "",
 		Password:           password,
 		MaxRetries:         0,

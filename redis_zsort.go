@@ -37,7 +37,7 @@ func (member Member) covert() *redis.Z {
 //
 //返回值
 //被成功添加的新成员的数量，不包括那些被更新的、已经存在的成员。
-func (rc *RedisCluster) ZAdd(ctx *gin.Context, key string, members Members) (int64, error) {
+func (rc *RedisCluster) ZAdd(ctx *gin.Context, key string, members Members) (nenAddedNum int64, err error) {
 
 	cmd := rc.client.ZAdd(ctx, key, members.covert()...)
 
@@ -46,25 +46,27 @@ func (rc *RedisCluster) ZAdd(ctx *gin.Context, key string, members Members) (int
 
 //返回有序集 key 中，成员 member 的 score 值。
 //
-//如果 member 元素不是有序集 key 的成员，或 key 不存在，返回 0， nil 。
-func (rc *RedisCluster) ZScore(ctx *gin.Context, key string, member string) (float64, error) {
+//如果 member 元素不是有序集 key 的成员，或 key 不存在 exists返回false。
+func (rc *RedisCluster) ZScore(ctx *gin.Context, key string, member string) (score float64, exist bool, err error) {
 
 	cmd := rc.client.ZScore(ctx, key, member)
 
-	return cmd.Val(), hasErr(cmd)
+	return cmd.Val(), !isRedisNil(cmd), hasErr(cmd)
 }
 
 //返回值
 //member 成员的新 score 值
-func (rc *RedisCluster) ZIncrBy(ctx *gin.Context, key string, increment float64, member string) (float64, error) {
+func (rc *RedisCluster) ZIncrBy(ctx *gin.Context, key string, increment float64, member string) (afterScore float64, err error) {
 
 	cmd := rc.client.ZIncrBy(ctx, key, increment, member)
 
 	return cmd.Val(), hasErr(cmd)
 }
 
+//返回 key中成员数量
+//
 //当 key 存在且是有序集类型时，返回有序集的基数。 当 key 不存在时，返回 0 。
-func (rc *RedisCluster) ZCard(ctx *gin.Context, key string) (int64, error) {
+func (rc *RedisCluster) ZCard(ctx *gin.Context, key string) (count int64, err error) {
 
 	cmd := rc.client.ZCard(ctx, key)
 
@@ -72,7 +74,7 @@ func (rc *RedisCluster) ZCard(ctx *gin.Context, key string) (int64, error) {
 }
 
 //返回有序集 key 中， score 值在 min 和 max 之间(默认包括 score 值等于 min 或 max )的成员的数量。
-func (rc *RedisCluster) ZCount(ctx *gin.Context, key string, minScore, maxScore float64) (int64, error) {
+func (rc *RedisCluster) ZCount(ctx *gin.Context, key string, minScore, maxScore float64) (count int64, err error) {
 
 	//strconv.FormatFloat()
 	cmd := rc.client.ZCount(ctx, key, FloatToString(minScore), FloatToString(maxScore))
@@ -94,7 +96,7 @@ func (rc *RedisCluster) ZCount(ctx *gin.Context, key string, minScore, maxScore 
 //那么 Redis 将 stop 当作最大下标来处理。
 //
 //返回指定区间内，有序集成员的列表。
-func (rc *RedisCluster) ZRange(ctx *gin.Context, key string, start, stop int64) ([]string, error) {
+func (rc *RedisCluster) ZRange(ctx *gin.Context, key string, start, stop int64) (memberNameList []string, err error) {
 
 	cmd := rc.client.ZRange(ctx, key, start, stop)
 
@@ -102,7 +104,7 @@ func (rc *RedisCluster) ZRange(ctx *gin.Context, key string, start, stop int64) 
 }
 
 // 同ZRange， 但是返回结果包括成员和score的所有信息
-func (rc *RedisCluster) ZRangeWithScores(ctx *gin.Context, key string, start, stop int64) ([]Z, error) {
+func (rc *RedisCluster) ZRangeWithScores(ctx *gin.Context, key string, start, stop int64) (memberList []Z, err error) {
 
 	cmd := rc.client.ZRangeWithScores(ctx, key, start, stop)
 
@@ -112,7 +114,7 @@ func (rc *RedisCluster) ZRangeWithScores(ctx *gin.Context, key string, start, st
 // 参数含义同ZRange，
 //
 //成员的位置按 score 值递减(从大到小)来排序。
-func (rc *RedisCluster) ZRevRange(ctx *gin.Context, key string, start, stop int64) ([]string, error) {
+func (rc *RedisCluster) ZRevRange(ctx *gin.Context, key string, start, stop int64) (memberNameList []string, err error) {
 
 	cmd := rc.client.ZRevRange(ctx, key, start, stop)
 
@@ -120,7 +122,7 @@ func (rc *RedisCluster) ZRevRange(ctx *gin.Context, key string, start, stop int6
 }
 
 // 同ZRevRange， 但是返回结果包括成员和score的所有信息
-func (rc *RedisCluster) ZRevRangeWithScores(ctx *gin.Context, key string, start, stop int64) ([]Z, error) {
+func (rc *RedisCluster) ZRevRangeWithScores(ctx *gin.Context, key string, start, stop int64) (memberList []Z, err error) {
 
 	cmd := rc.client.ZRevRangeWithScores(ctx, key, start, stop)
 
@@ -136,7 +138,7 @@ func (rc *RedisCluster) ZRevRangeWithScores(ctx *gin.Context, key string, start,
 //
 // bool 表示member是否是有序集 key 的成员
 
-func (rc *RedisCluster) ZRank(ctx *gin.Context, key, member string) (int64, bool, error) {
+func (rc *RedisCluster) ZRank(ctx *gin.Context, key, member string) (rank int64, exists bool, err error) {
 	cmd := rc.client.ZRank(ctx, key, member)
 
 	return cmd.Val(), isRedisNil(cmd), hasErr(cmd)
@@ -152,7 +154,7 @@ func (rc *RedisCluster) ZRank(ctx *gin.Context, key, member string) (int64, bool
 //如果 member 是有序集 key 的成员，返回 member 的排名。
 //
 // bool 表示member是否是有序集 key 的成员
-func (rc *RedisCluster) ZRevRank(ctx *gin.Context, key, member string) (int64, bool, error) {
+func (rc *RedisCluster) ZRevRank(ctx *gin.Context, key, member string) (rank int64, exists bool, err error) {
 	cmd := rc.client.ZRevRank(ctx, key, member)
 
 	return cmd.Val(), isRedisNil(cmd), hasErr(cmd)
@@ -164,7 +166,7 @@ func (rc *RedisCluster) ZRevRank(ctx *gin.Context, key, member string) (int64, b
 //
 //返回值
 //被成功移除的成员的数量，不包括被忽略的成员。
-func (rc *RedisCluster) ZRem(ctx *gin.Context, key string, members ...interface{}) (int64, error) {
+func (rc *RedisCluster) ZRem(ctx *gin.Context, key string, members ...interface{}) (remSuccessedNum int64, err error) {
 	cmd := rc.client.ZRem(ctx, key, members...)
 
 	return cmd.Val(), hasErr(cmd)
@@ -179,7 +181,7 @@ func (rc *RedisCluster) ZRem(ctx *gin.Context, key string, members ...interface{
 //
 //返回值
 //被移除成员的数量。
-func (rc *RedisCluster) ZRemRangeByRank(ctx *gin.Context, key string, start, stop int64) (int64, error) {
+func (rc *RedisCluster) ZRemRangeByRank(ctx *gin.Context, key string, start, stop int64) (remNum int64, err error) {
 	cmd := rc.client.ZRemRangeByRank(ctx, key, start, stop)
 
 	return cmd.Val(), hasErr(cmd)
@@ -190,7 +192,7 @@ func (rc *RedisCluster) ZRemRangeByRank(ctx *gin.Context, key string, start, sto
 //
 //返回值
 //被移除成员的数量。
-func (rc *RedisCluster) ZRemRangeByScore(ctx *gin.Context, key string, minScore, maxScore float64) (int64, error) {
+func (rc *RedisCluster) ZRemRangeByScore(ctx *gin.Context, key string, minScore, maxScore float64) (remNum int64, err error) {
 	cmd := rc.client.ZRemRangeByScore(ctx, key, FloatToString(minScore), FloatToString(maxScore))
 	return cmd.Val(), hasErr(cmd)
 }

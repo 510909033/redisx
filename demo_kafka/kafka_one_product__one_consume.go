@@ -88,7 +88,9 @@ func (demo *DemoKafkaOneProductOneConsume) writeByPartitions(topic string) {
 	//dialPartition.Seek(2, kafka.SeekAbsolute)
 	dialPartition.Seek(2, kafka.SeekCurrent)
 
-	dialPartition.Offset()
+	//dialPartition.Offset()
+	//dialPartition.SetRequiredAcks()
+	//dialPartition.
 
 	for {
 		m, err := dialPartition.ReadMessage(1024)

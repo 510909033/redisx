@@ -31,7 +31,7 @@ func hasErr(cmder redis.Cmder) error {
 	}
 	if isDebug {
 		if cmder.Err() == redis.Nil {
-			log.Println("HIT redis.Nil, name=", cmder.Name())
+			log.Printf("HIT redis.Nil, name=%s\n", cmder.Name())
 		}
 	}
 	return nil

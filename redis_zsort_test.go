@@ -53,8 +53,9 @@ func TestRedisCluster_ZScore(t *testing.T) {
 	_, err := cluster.Delete(ctx, key)
 	assert.Nil(t, err)
 
-	score, err := cluster.ZScore(ctx, key, "no_member")
+	score, exists, err := cluster.ZScore(ctx, key, "no_member")
 	assert.Nil(t, err)
+	assert.False(t, exists)
 	assert.Equal(t, float64(0), score)
 
 	members := Members{
@@ -76,12 +77,14 @@ func TestRedisCluster_ZScore(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, int64(len(members)), num)
 
-	score, err = cluster.ZScore(ctx, key, "no_member")
+	score, exists, err = cluster.ZScore(ctx, key, "no_member")
 	assert.Nil(t, err)
+	assert.False(t, exists)
 	assert.Equal(t, float64(0), score)
 
-	score, err = cluster.ZScore(ctx, key, "1")
+	score, exists, err = cluster.ZScore(ctx, key, "1")
 	assert.Nil(t, err)
+	assert.True(t, exists)
 	assert.Equal(t, float64(1), score)
 
 }

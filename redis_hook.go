@@ -44,8 +44,11 @@ func (redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	}
 
 	if isDebug {
+		if isRedisNil(cmd) {
+			logDebug(bbtctx, "name=%s, 返回了Redis.Nil, args=%+v", cmd.Name(), cmd.Args())
+		}
 		logDebug(bbtctx, "命令名称=%s, 耗时=%d", cmd.Name(), time.Since(t).Milliseconds())
-		//logDebug(bbtctx, "name=%s, cmd=%#v", cmd.Name(), cmd)
+		//logDebug(bbtctx, "name=%s, cmd=%#v", cmd.Name(), cmd
 	}
 	//log.Println(cmd.Name(), time.Since(t).Milliseconds())
 	//log.Printf("name=%s, cmd=%#v\n", cmd.Name(), cmd)

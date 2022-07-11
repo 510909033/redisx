@@ -8,6 +8,18 @@ import (
 	"strings"
 )
 
+/*
+redis  分布式锁
+https://redis.io/docs/reference/patterns/distributed-locks/
+
+redis 手册
+http://www.redis.cn/commands/cluster-meet.html
+
+redis集群在默认情况下，slaves服务器不为客户端提供读服务，可以通过设置readonly命令，
+允许客户端直接读取slaves服务器节点的读服务
+
+*/
+
 func GetTestRedisClient() RedisCluster {
 	password := "bitnami"
 	log.SetFlags(log.Lshortfile)

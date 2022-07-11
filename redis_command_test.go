@@ -26,14 +26,6 @@ func TestRedisCluster_Command(t *testing.T) {
 
 }
 
-func TestRedisCluster_ClientGetName(t *testing.T) {
-	//cluster := getTestClient()
-	//ctx := getTestCtx()
-
-	//cluster.ClientGetName(ctx)
-
-}
-
 func TestRedisCluster_SetEX(t *testing.T) {
 	cluster := getTestClient()
 	ctx := getTestCtx()
